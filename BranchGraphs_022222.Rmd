@@ -1,0 +1,122 @@
+---
+title: "Branch Selection Rates & Graphs"
+output: html_notebook
+---
+
+
+```{r}
+##Behavioral Graph selection rates by condition
+library(ggplot2)
+library(Rmisc)
+library(reshape2)
+library(ggsignif)
+
+branchsr <- read.csv('BranchSRs_022122.csv')
+branchsr$ID <- 1:nrow(branchsr)
+
+branchsrlong <- melt(branchsr, id.vars='ID', variable.name='condition', value.name='selectionrate')
+SRsumm <- summarySE(data=branchsrlong, measurevar='selectionrate', groupvars='condition')
+
+#create graph
+p_ac <- ggplot(data = SRsumm,aes(y=selectionrate,x=condition)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) + 
+  geom_bar(stat = 'identity', color = 'black', fill='steelblue', position = position_dodge(.9)) +
+  geom_errorbar(aes(ymin = selectionrate-se, ymax = selectionrate+se,width = .3),position=position_dodge(.9)) +
+ geom_text(aes(x = condition, y = selectionrate, label = round(selectionrate, digits=2)), position = position_stack(vjust = .5), size = 4)+
+  ggtitle('Selection Rates by Condition') + 
+  theme(plot.title = element_text(hjust = 0.5, size=17),
+        axis.text.x=element_text(size=15),
+        axis.text.y=element_text(size=15), axis.title.x=element_text(size=15),
+        axis.title.y=element_text(size=15)) +
+  labs(fill=' ', x = ' Condition', y='Selection Rate') 
+p_ac
+
+
+controldelay <- t.test(branchsr$Control, branchsr$Delay, paired=T)
+controlswitch <- t.test(branchsr$Control, branchsr$Switch, paired=T)
+controldual <- t.test(branchsr$Control, branchsr$Dual, paired=T)
+delayswitch <- t.test(branchsr$Delay, branchsr$Switch, paired=T)
+delaydual <- t.test(branchsr$Delay, branchsr$Dual, paired=T)
+switchdual <- t.test(branchsr$Switch, branchsr$Dual, paired=T)
+
+p.vals <- c(controldelay$p.value, controlswitch$p.value, controldual$p.value, delayswitch$p.value, delaydual$p.value, switchdual$p.value)
+
+p.adjust(p.vals, "bonferroni")
+```
+```{r}
+library(ggplot2)
+library(Rmisc)
+library(reshape2)
+library(ggsignif)
+
+branchRT1 <- read.csv('BranchRTs_022122.csv')
+branchRT1$Phase <- 'Selection'
+branchRT2 <- read.csv('BranchRTs_Practice_022122.csv')
+branchRT2$Phase <- 'Learning'
+
+branchRTs <- rbind(branchRT1, branchRT2)
+
+branchRTslong <- melt(branchRTs, id.vars=c('ID', 'Phase'), variable.name='condition', value.name='RT')
+branchRTslong$RT <- branchRTslong$RT*1000
+SRbranchRTs <- summarySE(data=branchRTslong, measurevar='RT', groupvars=c('condition', 'Phase'), na.rm=T)
+
+aa <- ggplot(SRbranchRTs, aes(x=condition, y=RT)) +
+  geom_line(aes(color=Phase, group=Phase)) +
+  geom_point(aes(color=Phase, shape=Phase))+
+  coord_cartesian (ylim=c(0,1400)) +
+  geom_errorbar(aes(ymin = RT - se, ymax = RT + se, color=Phase, width=.5,), size=1.5) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+    panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  ggtitle('Reaction Times by Condition') + 
+  theme(plot.title = element_text(hjust = 0.5, size=17),
+        axis.text.x=element_text(size=15),
+        axis.text.y=element_text(size=15), axis.title.x=element_text(size=15),
+        axis.title.y=element_text(size=15)) +
+  labs(fill=' ', x = ' ', y='Reaction Times')
+aa
+
+```
+
+
+
+```{r}
+library(ggplot2)
+library(Rmisc)
+library(reshape2)
+library(ggsignif)
+
+branchAcc1 <- read.csv('BranchAcc_022122.csv')
+branchAcc1$Phase <- 'Selection'
+branchAcc2 <- read.csv('BranchAcc_Practice_022122.csv')
+branchAcc2$Phase <- 'Learning'
+
+branchAcc <- rbind(branchAcc1, branchAcc2)
+
+branchAcclong <- melt(branchAcc, id.vars=c('ID', 'Phase'), variable.name='condition', value.name='Acc')
+branchAcclong$Acc <- 1-branchAcclong$Acc
+SRbranchAcc <- summarySE(data=branchAcclong, measurevar='Acc', groupvars=c('condition', 'Phase'), na.rm=T)
+
+bb <- ggplot(SRbranchAcc, aes(x=condition, y=Acc)) +
+  geom_line(aes(color=Phase, group=Phase)) +
+  geom_point(aes(color=Phase, shape=Phase))+
+  coord_cartesian (ylim=c(0,.3)) +
+  geom_errorbar(aes(ymin = Acc - se, ymax = Acc + se, color=Phase, width=.5,), size=1.5) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+    panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  ggtitle('Error Rate by Condition') + 
+  theme(plot.title = element_text(hjust = 0.5, size=17),
+        axis.text.x=element_text(size=15),
+        axis.text.y=element_text(size=15), axis.title.x=element_text(size=15),
+        axis.title.y=element_text(size=15)) +
+  labs(fill=' ', x = ' ', y='Error Rate')
+  
+
+bb
+```
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

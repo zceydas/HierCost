@@ -1,0 +1,173 @@
+---
+title: "Hier Selection Rates & Graphs"
+output: html_notebook
+---
+```{r}
+##Behavioral Graph selection rates by condition
+library(ggplot2)
+library(Rmisc)
+library(reshape2)
+library(ggsignif)
+
+hiersr <- read.csv('HierCostSRs_022122.csv')
+hiersr$ID <- 1:nrow(hiersr)
+
+hiersrlong <- melt(hiersr, id.vars='ID', variable.name='condition', value.name='selectionrate')
+hiersrlong$condition <- gsub("hr1", "R1", hiersrlong$condition)
+hiersrlong$condition <- gsub("hr2", "R2", hiersrlong$condition)
+hiersrlong$condition <- gsub("hr4", "R4", hiersrlong$condition)
+hiersrlong$condition <- gsub("hf1", "F1", hiersrlong$condition)
+hiersrlong$condition <- gsub("hf2", "F2", hiersrlong$condition)
+hiersrlong$condition <- gsub("hf4", "F4", hiersrlong$condition)
+
+SRsumm <- summarySE(data=hiersrlong, measurevar='selectionrate', groupvars='condition')
+SRsumm$condition <- c('R1', 'R2', 'R4', 'F1', 'F2', 'F4')
+SRsumm$condition <- factor(SRsumm$condition, levels=c('R1', 'R2', 'R4', 'F1', 'F2', 'F4'))
+
+
+#create graph
+p_ac <- ggplot(data = SRsumm,aes(y=selectionrate,x=condition)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) + 
+  geom_bar(stat = 'identity', color = 'black', fill='steelblue', position = position_dodge(.9)) +
+   geom_point(data=hiersrlong, aes(y=selectionrate, x=condition)) + 
+  geom_errorbar(aes(ymin = selectionrate-se, ymax = selectionrate+se,width = .3),position=position_dodge(.9)) +
+ geom_text(aes(x = condition, y = selectionrate, label = round(selectionrate, digits=2)), position = position_stack(vjust = .5), size = 4)+
+  ggtitle('Selection Rates by Condition') + 
+  theme(plot.title = element_text(hjust = 0.5, size=17),
+        axis.text.x=element_text(size=15),
+        axis.text.y=element_text(size=15), axis.title.x=element_text(size=15),
+        axis.title.y=element_text(size=15)) +
+  labs(fill=' ', x = '  ', y='Selection Rate') + 
+  annotate("text", x = 1.17, y = 1.1, label = "Abstraction Level 0") + 
+  annotate("text", x = 3, y = 1, label = "Abstraction Level 1") +
+  annotate("text", x=5.5, y=.73, label = "Abstraction Level 2") +
+  geom_signif(comparisons=list(c("R2", "F1")), annotations=" ",
+             y_position = .95, tip_length = 0, vjust=0.4) + 
+  geom_signif(comparisons=list(c("F2", "F4")), annotations=" ",
+             y_position = .67, tip_length = 0, vjust=0.4) 
+p_ac
+```
+
+
+```{r}
+library(ggplot2)
+library(Rmisc)
+library(reshape2)
+library(ggsignif)
+
+hierratespair <- read.csv('HierPairwiseSelection.csv')
+hierratespair$ID <- 1:nrow(hierratespair)
+
+hierratespairlong <- melt(hierratespair, id.vars='ID', variable.name='pair', value.name='selectionrate')
+SRhierratespair <- summarySE(data=hierratespairlong, measurevar='selectionrate', groupvars='pair', na.rm=T)
+
+#create graph
+p_ac_p <- ggplot(data = SRhierratespair,aes(y=selectionrate,x=pair)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) + 
+  geom_bar(stat = 'identity', color = 'black', fill='steelblue', position = position_dodge(.9)) +
+ geom_point(data=hierratespairlong, aes(y=selectionrate, x=pair)) + 
+  geom_errorbar(aes(ymin = selectionrate-se, ymax = selectionrate+se,width = .3),position=position_dodge(.9)) +
+   geom_text(aes(x = pair, y = selectionrate, label = round(selectionrate, digits=2)), position = position_stack(vjust = .5), size = 4)+
+  geom_hline(yintercept=.5, linetype="dashed", color = "red") +
+  coord_cartesian(ylim=c(0,1)) + 
+  ggtitle('Selected Pairwise Selection Rates') + 
+  theme(plot.title = element_text(hjust = 0.5, size=17),
+        axis.text.x=element_text(angle=45, hjust=1, size=12),
+        axis.text.y=element_text(size=15), axis.title.x=element_text(size=15),
+        axis.title.y=element_text(size=15)) +
+  scale_x_discrete(labels = c('R vs F','R2 vs F1','R2 vs R4', 'F2 vs F4', 'R3 vs F3')) + 
+  labs(fill=' ', x = ' ', y='Selection Rate')
+p_ac_p
+```
+
+
+
+
+```{r}
+library(ggplot2)
+library(Rmisc)
+library(reshape2)
+library(ggsignif)
+
+hierRT1 <- read.csv('HierCostRTs_022122.csv')
+hierRT1$Phase <- 'Selection'
+hierRT2 <- read.csv('HierCostRTs_Practice_022122.csv')
+hierRT2$Phase <- 'Learning'
+
+hierRTs <- rbind(hierRT1, hierRT2)
+
+hierRTslong <- melt(hierRTs, id.vars=c('ID', 'Phase'), variable.name='condition', value.name='RT')
+SRhierRTs <- summarySE(data=hierRTslong, measurevar='RT', groupvars=c('condition', 'Phase'), na.rm=T)
+SRhierRTs$grp <- c('1', '1', '2', '2', '2', '2', '2', '2', '3', '3', '3', '3')
+SRhierRTs$condition <- c('aR1', 'aR1', 'aR2', 'aR2', 'aR4', 'aR4', 'F1', 'F1', 'F2', 'F2', 'F4', 'F4')
+
+
+
+hierRTg <- ggplot(hierRTslong, aes(x=condition, y=RT, shape=Phase, fill=Phase)) +
+  geom_boxplot(outlier.shape=NA) + 
+  geom_point(position=position_jitterdodge(jitter.width=.09, dodge.width=.75)) + 
+  coord_cartesian (ylim=c(0,1400)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+    panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  ggtitle('Reaction Times by Condition') + 
+  theme(plot.title = element_text(hjust = 0.5, size=17),
+        axis.text.x=element_text(size=15),
+        axis.text.y=element_text(size=15), axis.title.x=element_text(size=15),
+        axis.title.y=element_text(size=15)) +
+  labs(x = ' ', y='Reaction Times') +
+  scale_x_discrete(labels = c('R1','R2','R4', 'F1', 'F2', 'F4')) +
+  annotate("text", x = 1.1, y = 850, size=4.5, label = "Abstraction \n Level 0") + 
+  annotate("text", x = 3, y = 1150, size=4.5, label = "Abstraction Level 1") +
+  annotate("text", x= 5.5, y=680, size=4.5, label = "Abstraction Level 2")
+  
+hierRTg
+```
+
+
+
+```{r}
+library(ggplot2)
+library(Rmisc)
+library(reshape2)
+library(ggsignif)
+
+hierAcc1 <- read.csv('HierCostAcc_022122.csv')
+hierAcc1$Phase <- 'Selection'
+hierAcc2 <- read.csv('HierCostAcc_Practice_022122.csv')
+hierAcc2$Phase <- 'Learning'
+
+hierAcc <- rbind(hierAcc1, hierAcc2)
+
+hierAcclong <- melt(hierAcc, id.vars=c('ID', 'Phase'), variable.name='condition', value.name='Acc')
+hierAcclong$Acc <- 1-hierAcclong$Acc
+SRhierAcc <- summarySE(data=hierAcclong, measurevar='Acc', groupvars=c('condition', 'Phase'), na.rm=T)
+SRhierAcc$grp <- c('1', '1', '2', '2', '2', '2', '2', '2', '3', '3', '3', '3')
+SRhierAcc$condition <- c('aR1', 'aR1', 'aR2', 'aR2', 'aR4', 'aR4', 'F1', 'F1', 'F2', 'F2', 'F4', 'F4')
+
+hierAccg <- ggplot(hierAcclong, aes(x=condition, y=Acc, shape=Phase, fill=Phase)) +
+  geom_boxplot(outlier.shape=NA) + 
+  geom_point(position=position_jitterdodge(jitter.width=.09, dodge.width=.75)) + 
+  coord_cartesian (ylim=c(0,.35)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+    panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  ggtitle('Error Rates by Condition') + 
+  theme(plot.title = element_text(hjust = 0.5, size=17),
+        axis.text.x=element_text(size=15),
+        axis.text.y=element_text(size=15), axis.title.x=element_text(size=15),
+        axis.title.y=element_text(size=15)) +
+  labs(x = ' ', y='Error Rates') +
+  scale_x_discrete(labels = c('R1','R2','R4', 'F1', 'F2', 'F4')) + 
+  annotate("text", x = 1, y = .1, size=4.5, label = "Abstraction \n Level 0") + 
+  annotate("text", x = 3, y = .15, size=4.5, label = "Abstraction Level 1") +
+  annotate("text", x= 5.5, y=.33, size=4.5, label = "Abstraction Level 2")
+
+hierAccg
+```
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
